@@ -8,8 +8,11 @@ class User(Base):
     name = Column(String)
     email = Column(String, unique=True, index=True)
     age = Column(Integer)
+    
+    # === НОВЕ ПОЛЕ ДЛЯ ПАРОЛЯ ===
+    hashed_password = Column(String) 
 
-    profile = relationship("Profile", back_populates="user", uselist=False) 
+    profile = relationship("Profile", back_populates="user", uselist=False)
     orders = relationship("Order", back_populates="user") 
 
 class Profile(Base):
