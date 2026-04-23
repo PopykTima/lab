@@ -4,11 +4,19 @@ class UserCreate(BaseModel):
     name: str
     email: str
     age: int
+    password: str
 
-class UserResponse(UserCreate):
+class UserResponse(BaseModel):
     id: int
+    name: str
+    email: str
+    age: int
     class Config:
         from_attributes = True
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
 
 class CategoryCreate(BaseModel):
     name: str

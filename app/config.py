@@ -1,6 +1,9 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+asyncpg://admin:rootpassword@db:5432/my_database"
+    DATABASE_URL: str
+    
+    # Цей рядок каже: "шукай значення у файлі .env"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
