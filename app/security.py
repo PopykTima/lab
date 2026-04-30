@@ -1,4 +1,5 @@
 from passlib.context import CryptContext
+<<<<<<< HEAD
 import jwt
 from datetime import datetime, timedelta, timezone
 
@@ -25,3 +26,15 @@ def create_access_token(data: dict) -> str:
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+=======
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+>>>>>>> dev

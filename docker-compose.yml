@@ -11,14 +11,21 @@ services:
   db:
     image: postgres:15
     environment:
+<<<<<<< HEAD
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+=======
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: my_database
+>>>>>>> dev
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+<<<<<<< HEAD
   db_test:
     image: postgres:15
     environment:
@@ -33,3 +40,7 @@ services:
 volumes:
   postgres_data:
   postgres_test_data:
+=======
+volumes:
+  postgres_data:
+>>>>>>> dev
