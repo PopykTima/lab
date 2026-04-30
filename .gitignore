@@ -1,3 +1,19 @@
+# Скріншоти та картинки
+*.png
+*.jpg
+*.jpeg
+
+# Віртуальне середовище
 .venv/
+env/
+
+# Кеш Python
 __pycache__/
+*.pyc
+
+# Тестові бази та секрети
 .env
+.env.test
+test_db_name
+*.db
+*.sqlite3
