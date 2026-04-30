@@ -1,6 +1,3 @@
-from pydantic_settings import BaseSettings
+﻿from app.core.config import settings
 
-class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+asyncpg://admin:rootpassword@db:5432/my_database"
-
-settings = Settings()
+__all__ = ["settings"]
