@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-from fastapi import FastAPI, Depends, HTTPException, Response, Request
+﻿from fastapi import FastAPI, Depends, HTTPException, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 import jwt
@@ -8,13 +7,9 @@ from .database import get_db
 from .models import User, Category, Product
 from . import schemas
 from .security import get_password_hash, verify_password, create_access_token, SECRET_KEY, ALGORITHM
-=======
-﻿from fastapi import FastAPI
->>>>>>> dev
 
 from app.api import categories, orders, products, profiles, users
 
-<<<<<<< HEAD
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)):
     token = request.cookies.get("access_token")
     if not token:
@@ -180,12 +175,3 @@ async def delete_product(product_id: int, db: AsyncSession = Depends(get_db), cu
     await db.delete(product)
     await db.commit()
     return {"message": "Product deleted"}
-=======
-app = FastAPI(title="Lab1 FastAPI")
-
-app.include_router(users.router)
-app.include_router(categories.router)
-app.include_router(products.router)
-app.include_router(profiles.router)
-app.include_router(orders.router)
->>>>>>> dev
