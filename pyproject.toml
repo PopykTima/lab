@@ -9,14 +9,19 @@ readme = "README.md"
 python = "^3.12"
 fastapi = "*"
 uvicorn = {extras = ["standard"], version = "*"}
+prometheus-fastapi-instrumentator = "*"
+prometheus-client = "*"
 pydantic-settings = "*"
 sqlalchemy = "*"
 asyncpg = "*"
 alembic = "*"
-passlib = {extras = ["bcrypt"], version = "*"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 pyjwt = "*"
 pytest = "^9.0.3"
 pytest-asyncio = "^1.3.0"
+python-jose = {extras = ["cryptography"], version = "^3.5.0"}
+bcrypt = "<4.0.0"
+email-validator = "^2.3.0"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

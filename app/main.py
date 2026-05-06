@@ -3,12 +3,31 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 import jwt
 
-from .database import get_db
-from .models import User, Category, Product
-from . import schemas
-from .security import get_password_hash, verify_password, create_access_token, SECRET_KEY, ALGORITHM
+from prometheus_fastapi_instrumentator import Instrumentator
+
+from app.core.database import engine, Base, get_db
+from .models import User, Category, Product, Order
+from app.schemas.user import UserLogin, UserCreate, UserResponse
+from app.schemas.category import CategoryCreate, CategoryResponse
+from app.schemas.product import ProductCreate, ProductResponse
+from app.core.security import get_password_hash, verify_password, create_access_token, SECRET_KEY, ALGORITHM
 
 from app.api import categories, orders, products, profiles, users
+
+app = FastAPI()
+
+@app.on_event("startup")
+async def create_tables() -> None:
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+app.include_router(users.router, prefix="/api/v1", tags=["users"])
+app.include_router(categories.router, prefix="/api/v1", tags=["categories"])
+app.include_router(products.router, prefix="/api/v1", tags=["products"])
+app.include_router(orders.router, prefix="/api/v1", tags=["orders"])
+app.include_router(profiles.router, prefix="/api/v1", tags=["profiles"])
+
+Instrumentator().instrument(app).expose(app)
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)):
     token = request.cookies.get("access_token")
@@ -28,8 +47,8 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@app.post("/auth/register", response_model=schemas.UserResponse)
-async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db)):
+@app.post("/auth/register", response_model=UserResponse)
+async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == user.email))
     if result.scalars().first():
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -42,7 +61,7 @@ async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db))
     return new_user
 
 @app.post("/auth/login")
-async def login(response: Response, user_data: schemas.UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(response: Response, user_data: UserLogin, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == user_data.email))
     user = result.scalars().first()
 
@@ -58,24 +77,24 @@ async def logout(response: Response):
     response.delete_cookie("access_token")
     return {"message": "Logged out successfully"}
 
-@app.get("/users/me", response_model=schemas.UserResponse)
+@app.get("/users/me", response_model=UserResponse)
 async def get_my_profile(current_user: User = Depends(get_current_user)):
     return current_user
 
-@app.get("/users/", response_model=list[schemas.UserResponse])
+@app.get("/users/", response_model=list[UserResponse])
 async def get_users(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User))
     return result.scalars().all()
 
-@app.get("/users/{user_id}", response_model=schemas.UserResponse)
+@app.get("/users/{user_id}", response_model=UserResponse)
 async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@app.put("/users/{user_id}", response_model=schemas.UserResponse)
-async def update_user(user_id: int, user_data: schemas.UserCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+@app.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(user_id: int, user_data: UserCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -96,28 +115,28 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), current_
     await db.commit()
     return {"message": "User deleted"}
 
-@app.post("/categories/", response_model=schemas.CategoryResponse)
-async def create_category(category: schemas.CategoryCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+@app.post("/categories/", response_model=CategoryResponse)
+async def create_category(category: CategoryCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_category = Category(name=category.name)
     db.add(new_category)
     await db.commit()
     await db.refresh(new_category)
     return new_category
 
-@app.get("/categories/", response_model=list[schemas.CategoryResponse])
+@app.get("/categories/", response_model=list[CategoryResponse])
 async def get_categories(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Category))
     return result.scalars().all()
 
-@app.get("/categories/{category_id}", response_model=schemas.CategoryResponse)
+@app.get("/categories/{category_id}", response_model=CategoryResponse)
 async def get_category(category_id: int, db: AsyncSession = Depends(get_db)):
     category = await db.get(Category, category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
     return category
 
-@app.put("/categories/{category_id}", response_model=schemas.CategoryResponse)
-async def update_category(category_id: int, category_data: schemas.CategoryCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+@app.put("/categories/{category_id}", response_model=CategoryResponse)
+async def update_category(category_id: int, category_data: CategoryCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     category = await db.get(Category, category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -135,28 +154,28 @@ async def delete_category(category_id: int, db: AsyncSession = Depends(get_db), 
     await db.commit()
     return {"message": "Category deleted"}
 
-@app.post("/products/", response_model=schemas.ProductResponse)
-async def create_product(product: schemas.ProductCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+@app.post("/products/", response_model=ProductResponse)
+async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_product = Product(title=product.title, price=product.price, category_id=product.category_id)
     db.add(new_product)
     await db.commit()
     await db.refresh(new_product)
     return new_product
 
-@app.get("/products/", response_model=list[schemas.ProductResponse])
+@app.get("/products/", response_model=list[ProductResponse])
 async def get_products(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Product))
     return result.scalars().all()
 
-@app.get("/products/{product_id}", response_model=schemas.ProductResponse)
+@app.get("/products/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: int, db: AsyncSession = Depends(get_db)):
     product = await db.get(Product, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
-@app.put("/products/{product_id}", response_model=schemas.ProductResponse)
-async def update_product(product_id: int, product_data: schemas.ProductCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+@app.put("/products/{product_id}", response_model=ProductResponse)
+async def update_product(product_id: int, product_data: ProductCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     product = await db.get(Product, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")

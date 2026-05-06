@@ -23,6 +23,8 @@ async def test_register_user(test_client: AsyncClient):
     # Act
     response = await test_client.post("/auth/register", json=user_data)
     
+    print(response.json()) # Це покаже нам текст помилки, якщо вона виникне
+    
     # Assert
     assert response.status_code == 200
     data = response.json()

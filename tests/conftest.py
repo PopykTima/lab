@@ -14,7 +14,7 @@ from app.core.config import settings
 
 # Test database URL - uses separate database (from docker-compose)
 # Uses db_test service on port 5433
-TEST_DATABASE_URL = "postgresql+asyncpg://admin:rootpassword@localhost:5433/app_test"
+TEST_DATABASE_URL = "postgresql+asyncpg://admin:rootpassword@db_test:5432/app_test"
 
 # Alternative: derive from main database URL
 # TEST_DATABASE_URL = settings.DATABASE_URL.replace(
@@ -30,11 +30,11 @@ def event_loop():
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="session")
 async def test_engine():
     """
     Create test database engine.
-    Creates fresh database for each test function.
+    Creates tables once per session.
     """
     # Try to use test database URL, fallback to local
     db_url = TEST_DATABASE_URL
@@ -45,7 +45,15 @@ async def test_engine():
         poolclass=NullPool,
     )
     
+    # Create all tables once per session
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
     yield engine
+    
+    # Drop all tables after session
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
     
     await engine.dispose()
 
@@ -53,7 +61,7 @@ async def test_engine():
 @pytest_asyncio.fixture(scope="function")
 async def test_db_session(test_engine):
     """
-    Create test database session with automatic cleanup.
+    Create test database session with transaction rollback.
     """
     async_session = async_sessionmaker(
         test_engine,
@@ -62,15 +70,9 @@ async def test_db_session(test_engine):
     )
     
     async with async_session() as session:
-        # Create all tables
-        async with test_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        
         yield session
-        
-        # Drop all tables after test
-        async with test_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+        # Rollback any changes after test
+        await session.rollback()
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -80,7 +82,7 @@ async def test_client(test_db_session):
     """
     from httpx import AsyncClient, ASGITransport
     from app.main import app
-    from app.database import get_db
+    from app.core.database import get_db
     
     async def override_get_db():
         yield test_db_session
