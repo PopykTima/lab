@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.database import get_db
+from app.core.database import get_db
+from app.metrics import orders_created_counter
 from app.models import Order, User
 from app.schemas import OrderCreate, OrderResponse, OrderUpdate
 
@@ -19,6 +20,7 @@ async def create_order(order_in: OrderCreate, db: AsyncSession = Depends(get_db)
     db.add(order)
     await db.commit()
     await db.refresh(order)
+    orders_created_counter.inc()
     return order
 
 
