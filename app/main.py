@@ -6,7 +6,7 @@ import jwt
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.core.database import engine, Base, get_db
-from .models import User, Category, Product, Order
+from app.models import User, Category, Product, Order
 from app.schemas.user import UserLogin, UserCreate, UserResponse
 from app.schemas.category import CategoryCreate, CategoryResponse
 from app.schemas.product import ProductCreate, ProductResponse
@@ -18,6 +18,12 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def create_tables() -> None:
+    from app.models.user import User
+    from app.models.category import Category
+    from app.models.product import Product
+    from app.models.order import Order
+    from app.models.profile import Profile
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
