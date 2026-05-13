@@ -5,8 +5,9 @@ import jwt
 
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from app import crud
 from app.core.database import engine, Base, get_db
-from app.models import User, Category, Product, Order
+from app.models import User
 from app.schemas.user import UserLogin, UserCreate, UserResponse
 from app.schemas.category import CategoryCreate, CategoryResponse
 from app.schemas.product import ProductCreate, ProductResponse
@@ -123,80 +124,58 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), current_
 
 @app.post("/categories/", response_model=CategoryResponse)
 async def create_category(category: CategoryCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    new_category = Category(name=category.name)
-    db.add(new_category)
-    await db.commit()
-    await db.refresh(new_category)
-    return new_category
+    return await crud.create_category(db, category)
 
 @app.get("/categories/", response_model=list[CategoryResponse])
 async def get_categories(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Category))
-    return result.scalars().all()
+    return await crud.get_categories(db)
 
 @app.get("/categories/{category_id}", response_model=CategoryResponse)
 async def get_category(category_id: int, db: AsyncSession = Depends(get_db)):
-    category = await db.get(Category, category_id)
+    category = await crud.get_category(db, category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
     return category
 
 @app.put("/categories/{category_id}", response_model=CategoryResponse)
 async def update_category(category_id: int, category_data: CategoryCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    category = await db.get(Category, category_id)
+    category = await crud.update_category(db, category_id, category_data)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
-    category.name = category_data.name
-    await db.commit()
-    await db.refresh(category)
     return category
 
 @app.delete("/categories/{category_id}")
 async def delete_category(category_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    category = await db.get(Category, category_id)
-    if not category:
+    deleted = await crud.delete_category(db, category_id)
+    if not deleted:
         raise HTTPException(status_code=404, detail="Category not found")
-    await db.delete(category)
-    await db.commit()
     return {"message": "Category deleted"}
 
 @app.post("/products/", response_model=ProductResponse)
 async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    new_product = Product(title=product.title, price=product.price, category_id=product.category_id)
-    db.add(new_product)
-    await db.commit()
-    await db.refresh(new_product)
-    return new_product
+    return await crud.create_product(db, product)
 
 @app.get("/products/", response_model=list[ProductResponse])
 async def get_products(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Product))
-    return result.scalars().all()
+    return await crud.get_products(db)
 
 @app.get("/products/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: int, db: AsyncSession = Depends(get_db)):
-    product = await db.get(Product, product_id)
+    product = await crud.get_product(db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
 @app.put("/products/{product_id}", response_model=ProductResponse)
 async def update_product(product_id: int, product_data: ProductCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    product = await db.get(Product, product_id)
+    product = await crud.update_product(db, product_id, product_data)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    product.title = product_data.title
-    product.price = product_data.price
-    product.category_id = product_data.category_id
-    await db.commit()
-    await db.refresh(product)
     return product
 
 @app.delete("/products/{product_id}")
 async def delete_product(product_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    product = await db.get(Product, product_id)
-    if not product:
+    deleted = await crud.delete_product(db, product_id)
+    if not deleted:
         raise HTTPException(status_code=404, detail="Product not found")
-    await db.delete(product)
-    await db.commit()
     return {"message": "Product deleted"}
