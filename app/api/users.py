@@ -9,7 +9,6 @@ from app.core.security import get_password_hash
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-# POST: Створення юзера (ТУТ БУДЕ СТАТУС 201)
 @router.post("/", response_model=UserResponse, status_code=201)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     new_user = User(
@@ -23,13 +22,11 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     await db.refresh(new_user)
     return new_user
 
-# GET: Отримати всіх юзерів (статус 200)
 @router.get("/", response_model=list[UserResponse])
 async def read_users(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User))
     return result.scalars().all()
 
-# GET: Отримати одного юзера за ID (статус 200)
 @router.get("/{user_id}", response_model=UserResponse)
 async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await db.get(User, user_id)
@@ -37,7 +34,6 @@ async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-# PUT: Оновити юзера (статус 200)
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user(user_id: int, user_in: UserUpdate, db: AsyncSession = Depends(get_db)):
     user = await db.get(User, user_id)
@@ -57,7 +53,6 @@ async def update_user(user_id: int, user_in: UserUpdate, db: AsyncSession = Depe
     await db.refresh(user)
     return user
 
-# DELETE: Видалити юзера (статус 200)
 @router.delete("/{user_id}")
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await db.get(User, user_id)
