@@ -17,3 +17,5 @@ __pycache__/
 test_db_name
 *.db
 *.sqlite3
+
+aws-key.pem
