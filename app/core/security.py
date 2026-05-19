@@ -6,8 +6,8 @@ from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = getattr(settings, "SECRET_KEY", "super-secret-key-for-lab5")
-ALGORITHM = getattr(settings, "ALGORITHM", "HS256")
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
 def hash_password(password: str) -> str:
     return pwd_context.hash(password.encode("utf-8")[:72])
 
@@ -26,8 +26,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     
     to_encode.update({"exp": expire})
     
-    secret_key = getattr(settings, "SECRET_KEY", "super-secret-key-for-lab5")
-    algorithm = getattr(settings, "ALGORITHM", "HS256")
+    secret_key = settings.SECRET_KEY
+    algorithm = settings.ALGORITHM
     
     encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
     return encoded_jwt
